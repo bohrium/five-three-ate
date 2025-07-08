@@ -10,6 +10,7 @@ import sys
 #with open(in_name) as f:
 #    text = f.read()
 
+MOD_SYMBS = '#^vb'
 
 text = '''6 x 12
 
@@ -23,13 +24,13 @@ text = '''6 x 12
 .   |                                                                       |
 .   |-----------------------------------------------------------------------|
 .   |                                                                       |
-.   |(=========)------------------------------------------------------------|
+.   b(==long===)------------------------------------------------------------|
 .   |                                                                       |
 G4  |-----------------------------------------------------------------------|
 .   |                                                                       |
 .   |-----------------------------------------------------------------------|
 .
-.       (==)
+.       (=s)
 .
 .
 .
@@ -52,19 +53,51 @@ def process_line(ln):
     notes = []
     start = None
     name = ''
+    modstr = ''
     for i,c in enumerate(ln):
         if c=='(':
             assert start is None
+            assert name == ''
             start = i
             name = ''
         elif c ==')':
-            notes.append((start, i, name))
+            name = name.replace('=',' ').strip() # TODO: factor out?
+            notes.append((start, i, name, modstr))
             start = None
             name = ''
+            modstr = ''
         elif start is not None:
             name += c
+        elif c in MOD_SYMBS:
+            modstr += c
     assert start is None
+    assert name == ''
+    assert modstr == ''
     return notes
+
+SCALES_53_from_7 = {
+    'LYD':{0:0, 1:9, 2:14, 3:26, 4:31, 5:36, 6:48,},
+    'MAJ':{0:0, 1:9, 2:17, 3:22, 4:31, 5:36, 6:48,},
+    'MIN':{0:0, 1:9, 2:14, 3:22, 4:31, 5:36, 6:44,},
+    'MIX':{0:0, 1:9, 2:17, 3:22, 4:31, 5:36, 6:44,},
+}
+C_NAMES = 'CDEFGAB'
+
+#def pitchclass_53_from_str(s):
+#    '''assumes C major base'''
+#    name_7tet, mods = s[0], s[1:]
+#    assert name_7tet in C_NAMES
+#    base = SCALES_53_from_7['MAJ'][C_NAMES.find(name7tet)]
+#    counts = {m : mods.count(m) for m in MOD_SYMBS}
+#    assert sum(counts.values()) == len(mods)
+#    assert counts['#']+counts['b'] <= 1
+#    mods = (
+#        +4 * counts['#'] +
+#        +1 * counts['^'] +
+#        -1 * counts['v'] +
+#        -4 * counts['#']
+#        )
+#    return base + mods
 
 FOURTH_7tet = 3
 FIFTH_7tet  = 4
@@ -80,6 +113,22 @@ def get_offset(staff):
     val = CLEF_ANCHOR_VALS_BY_NAME[name]
     return (idx, val)
 
+def val_53_from_7(val_7tet):
+    ''' assumes C major '''
+    oct, off = val_7tet // 7, val_7tet % 7
+    return 53*oct + SCALES_53_from_7['MAJ'][off]
+
+def mod_val_53tet(modstr):
+    counts = {m : modstr.count(m) for m in MOD_SYMBS}
+    assert sum(counts.values()) == len(modstr)
+    assert counts['#']+counts['b'] <= 1
+    return (
+        +4 * counts['#'] +
+        +1 * counts['^'] +
+        -1 * counts['v'] +
+        -4 * counts['b']
+        )
+
 def process_chunk(c):
     flanked_staff, annotations = c.split('\nwhere\n')
     flanked_staff = flanked_staff.split('\n')
@@ -90,9 +139,22 @@ def process_chunk(c):
     staff = flanked_staff[1:-1]
     offset_idx, offset_val = get_offset(staff)
     for i,ln in enumerate(staff):
-        val = offset_idx - i + offset_val
+        val_7tet = offset_idx - i + offset_val
+        val_53tet = val_53_from_7(val_7tet)
         notes = process_line(ln[len(prefix):])
-        print(val, notes)
+        notes = [
+            (start, end, val_53tet + mod_val_53tet(modstr), name)
+                for
+            (start, end, name, modstr) in notes
+                ]
+        print(val_53tet, notes)
+
+SCALES_53_from_7 = {
+    'MIX':{0:0, 1:9, 2:17, 3:22, 4:31, 5:36, 6:44,},
+    'MAJ':{0:0, 1:9, 2:17, 3:22, 4:31, 5:36, 6:48,},
+    'MIN':{0:0, 1:9, 2:14, 3:22, 4:31, 5:36, 6:44,},
+    'LYD':{0:0, 1:9, 2:14, 3:26, 4:31, 5:36, 6:48,},
+}
 
 for c in body:
     process_chunk(c)

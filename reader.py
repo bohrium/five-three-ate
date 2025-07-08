@@ -6,6 +6,12 @@
 
 import sys
 
+from musical_tables import (
+        C_NAMES,
+        INTERVALS_BY_NAME,
+        SCALES_53_from_7,
+        )
+
 #in_name = sys.argv[1]
 #with open(in_name) as f:
 #    text = f.read()
@@ -73,30 +79,6 @@ def process_line(ln, ignore_char='='):
     assert modstr == ''
     return notes
 
-SCALES_53_from_7 = {
-    #
-    #         9   8   9   5 * 8   9   5     89 989
-    'LYD':[ 0,  9,  17, 26, 31, 39, 48,],
-    #                   |
-    #                   |                               | 4
-    #       * 9   8   5 | 9   8   9   5     98 989
-    'MAJ':[ 0,  9,  17, 22, 31, 39, 48,],
-    #                               |
-    #                               |                   | 7
-    #         9   8   5 * 9   8   5 | 9     98 998
-    'MIX':[ 0,  9,  17, 22, 31, 39, 44,],
-    #               |
-    #               |                                   | 3
-    #         9   5 | 8   9   8   5 * 9     99 898
-    'DOR':[ 0,  9,  14, 22, 31, 39, 44,],
-    #                           |
-    #                           |                       | 6
-    #         9   5 * 8   9   5 | 8   9     89 899
-    'MIN':[ 0,  9,  14, 22, 31, 36, 44,],
-    #
-}
-C_NAMES = 'CDEFGAB'
-
 FOURTH_7 = 3
 FIFTH_7  = 4
 CLEF_ANCHOR_VALS_BY_NAME = {'F3':-FIFTH_7, 'C4':0, 'G4':+FIFTH_7}
@@ -125,27 +107,6 @@ def mod_val_53(modstr):
         -1 * counts['v'] +
         -4 * counts['b']
         )
-
-INTERVALS_BY_NAME = {
-    'M2-': 8,
-    'M2' : 9,
-    'M2+':10,
-    'm3-':12,
-    'm3' :14,
-    'M3' :17,
-    'M3+':19,
-     '4' :22,
-     't' :26,
-     'T' :27,
-     '5' :31,
-    'm6-':34,
-    'm6' :36,
-    'M6' :39,
-    'M6+':41,
-    'M7-':43,
-    'M7' :44,
-    'M7+':45,
-}
 
 def interval_from_name(iname):
     '''

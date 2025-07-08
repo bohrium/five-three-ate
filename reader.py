@@ -49,7 +49,7 @@ beats_per_bar, ticks_per_beat = map(int, header.split('x'))
 prefix = '.   '
 ruling = ('|'+' '*(ticks_per_beat-1))*beats_per_bar + '|'
 
-def process_line(ln):
+def process_line(ln, ignore_char='='):
     notes = []
     start = None
     name = ''
@@ -61,7 +61,8 @@ def process_line(ln):
             start = i
             name = ''
         elif c ==')':
-            name = name.replace('=',' ').strip() # TODO: factor out?
+            if ignore_char:
+                name = name.replace(ignore_char,' ').strip() # TODO: factor out?
             notes.append((start, i, name, modstr))
             start = None
             name = ''
@@ -99,25 +100,9 @@ SCALES_53_from_7 = {
 }
 C_NAMES = 'CDEFGAB'
 
-#def pitchclass_53_from_str(s):
-#    '''assumes C major base'''
-#    name_7tet, mods = s[0], s[1:]
-#    assert name_7tet in C_NAMES
-#    base = SCALES_53_from_7['MAJ'][C_NAMES.find(name7tet)]
-#    counts = {m : mods.count(m) for m in MOD_SYMBS}
-#    assert sum(counts.values()) == len(mods)
-#    assert counts['#']+counts['b'] <= 1
-#    mods = (
-#        +4 * counts['#'] +
-#        +1 * counts['^'] +
-#        -1 * counts['v'] +
-#        -4 * counts['#']
-#        )
-#    return base + mods
-
-FOURTH_7tet = 3
-FIFTH_7tet  = 4
-CLEF_ANCHOR_VALS_BY_NAME = {'F3':-FIFTH_7tet, 'C4':0, 'G4':+FIFTH_7tet}
+FOURTH_7 = 3
+FIFTH_7  = 4
+CLEF_ANCHOR_VALS_BY_NAME = {'F3':-FIFTH_7, 'C4':0, 'G4':+FIFTH_7}
 
 def get_offset(staff):
     starts = [(i,ln.split()[0]) for i,ln in enumerate(staff)]
@@ -129,12 +114,12 @@ def get_offset(staff):
     val = CLEF_ANCHOR_VALS_BY_NAME[name]
     return (idx, val)
 
-def val_53_from_7(val_7tet):
+def val_53_from_7(val_7):
     ''' assumes C major '''
-    oct, off = val_7tet // 7, val_7tet % 7
+    oct, off = val_7 // 7, val_7 % 7
     return 53*oct + SCALES_53_from_7['MAJ'][off]
 
-def mod_val_53tet(modstr):
+def mod_val_53(modstr):
     counts = {m : modstr.count(m) for m in MOD_SYMBS}
     assert sum(counts.values()) == len(modstr)
     assert counts['#']+counts['b'] <= 1
@@ -155,15 +140,15 @@ def process_chunk(c):
     staff = flanked_staff[1:-1]
     offset_idx, offset_val = get_offset(staff)
     for i,ln in enumerate(staff):
-        val_7tet = offset_idx - i + offset_val
-        val_53tet = val_53_from_7(val_7tet)
+        val_7 = offset_idx - i + offset_val
+        val_53 = val_53_from_7(val_7)
         notes = process_line(ln[len(prefix):])
         notes = [
-            (start, end, val_53tet + mod_val_53tet(modstr), name)
+            (start, end, val_53 + mod_val_53(modstr), name)
             for
             (start, end, name, modstr) in notes
                 ]
-        print(val_53tet, notes)
+        print(val_53, notes)
 
 for c in body:
     process_chunk(c)

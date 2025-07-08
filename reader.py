@@ -8,6 +8,7 @@ import sys
 
 from musical_tables import (
         C_NAMES,
+        MOD_SYMBS,
         INTERVALS_BY_NAME,
         SCALES_53_from_7,
         )
@@ -15,8 +16,6 @@ from musical_tables import (
 #in_name = sys.argv[1]
 #with open(in_name) as f:
 #    text = f.read()
-
-MOD_SYMBS = '#^vb'
 
 text = '''
 6 x 12
@@ -53,6 +52,7 @@ prefix = '.   '
 ruling = ('|'+' '*(ticks_per_beat-1))*beats_per_bar + '|'
 
 def process_line(ln, ignore_char='='):
+    # TODO: think about having accidentals stay across notes?
     notes = []
     start = None
     name = ''
@@ -129,6 +129,9 @@ def sortby(name, start_end_val_by_name):
     start, end, val = start_end_val_by_name[name]
     return (start, val)
 
+# TODO: Records and type annotations
+
+# TODO: divide up this function
 def process_chunk(c, MAX_NUDGE = 3):
     staff, annotations = c.split('\nwhere\n')
     staff = staff.split('\n')
@@ -146,6 +149,7 @@ def process_chunk(c, MAX_NUDGE = 3):
             all_notes[name] = (start, end, modval_53)
    #print(all_notes)
 
+    # TODO: ? maybe let written order of constraint lines give precedence (check dag?)
     all_constraints = []
     constraints = annotations.split('\n')
     for ln in constraints:
@@ -154,16 +158,16 @@ def process_chunk(c, MAX_NUDGE = 3):
         interval = interval_from_name(iname)
         assert base in all_notes
         assert counter in all_notes
-        start = min(all_notes[nm][0] for nm in (base,counter))
-        loval, hival = (all_notes[nm][2] for nm in (base,counter))
         assert sortby(base, all_notes) < sortby(counter, all_notes)
         pair_sortby = tuple(sortby(nm, all_notes) for nm in (base,counter))
         all_constraints.append((sortby, base, counter, interval))
     all_constraints = sorted(all_constraints)
     #print(all_constraints)
 
+    # TODO: check not incorectly overdetermined!
+    # TODO: enforce unisons implicitly!  (by default should stay until end of bar)
     for _, base, counter, interval in all_constraints:
-        s_base, e_base, v_base = all_notes[base]
+        _, _, v_base = all_notes[base]
         s_counter, e_counter, v_counter = all_notes[counter]
         new_v_counter = v_base + interval
         all_notes[counter] = (s_counter, e_counter, new_v_counter)

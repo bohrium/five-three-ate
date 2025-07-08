@@ -1,4 +1,5 @@
 C_NAMES = 'CDEFGAB'
+MOD_SYMBS = '#^vb'
 
 SCALES_53_from_7 = {
     #
